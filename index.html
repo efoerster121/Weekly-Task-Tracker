@@ -512,7 +512,7 @@
                       const note=document.getElementById('repoNote');
                       if(v!==this.value){note.textContent='Will be saved as: '+v;note.style.display='block';}
                       else{note.style.display='none';}">
-      <div id="repoNote" class="field-hint" style="display: block; color: var(--gold-dark); font-weight: 600;">Name sanitized to: "weekly-task-tracker" (GitHub doesn't allow spaces)</div>
+      <div id="repoNote" class="field-hint" style="display:none;color:var(--gold-dark);font-weight:600;"></div>
     </div>
     <div class="field">
       <label class="field-label">Personal Access Token</label>
@@ -957,7 +957,19 @@ async function doPublish() {
       await new Promise(r=>setTimeout(r,2500));
     }
 
-    // Get existing file SHA
+    // Push .nojekyll — disables Jekyll so GitHub Pages serves plain HTML without errors
+    const njChk = await fetch(`https://api.github.com/repos/${user}/${repo}/contents/.nojekyll`, {headers:hdrs});
+    const njSha = njChk.ok ? (await njChk.json()).sha : null;
+    await fetch(`https://api.github.com/repos/${user}/${repo}/contents/.nojekyll`, {
+      method:'PUT', headers:hdrs,
+      body: JSON.stringify({
+        message: 'Disable Jekyll',
+        content: btoa(''),   // empty file
+        ...(njSha ? {sha: njSha} : {})
+      })
+    });
+
+    // Get existing index.html SHA
     const fChk = await fetch(`https://api.github.com/repos/${user}/${repo}/contents/index.html`, {headers:hdrs});
     const sha  = fChk.ok ? (await fChk.json()).sha : null;
 
